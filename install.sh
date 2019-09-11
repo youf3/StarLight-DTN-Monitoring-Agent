@@ -21,11 +21,11 @@ test_cmd () {
     cmd=$2
     #echo $cmd
 
-    $cmd > /dev/null 2>&1
+    eval $cmd
     RETVAL=$?
     if [ $RETVAL -ne 0 ]
     then
-	echo "$name not found"
+	# echo "$name not found"
 	exit -1
     fi
 }
