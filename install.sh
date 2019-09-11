@@ -34,6 +34,8 @@ check_requirements () {
 }
 
 install_node_exp () {
+    sudo systemctl stop node_exporter.service
+
     sudo useradd --no-create-home --shell /bin/false node_exporter
     sudo mkdir /etc/node_exporter > /dev/null 2>&1
     
@@ -45,7 +47,6 @@ install_node_exp () {
     cd ..
     sudo cp systemd/node_exporter.service $systemd_loc
     sudo systemctl daemon-reload
-    sudo systemctl stop node_exporter.service
     sudo systemctl start node_exporter.service
     sudo systemctl enable node_exporter.service
 }
