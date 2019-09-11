@@ -15,15 +15,27 @@ get_arch () {
     #echo $architecture
 }
 
-check_requirements () {
+test_cmd () {
 
-    echo test|sponge > /dev/null 
+    name=$1
+    cmd=$2
+    #echo $cmd
+
+    $cmd > /dev/null 2>&1
     RETVAL=$?
     if [ $RETVAL -ne 0 ]
     then
-	echo "sponge not found"
+	echo "$name not found"
 	exit -1
     fi
+}
+
+check_requirements () {
+
+    cmd="echo test|sponge > /dev/null"
+    test_cmd "sponge" "$cmd"
+
+    test_cmd "jq" "jq -V"
 
     if [ "$architecture" == ""   ]
     then
