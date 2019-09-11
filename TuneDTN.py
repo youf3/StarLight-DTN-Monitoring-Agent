@@ -178,7 +178,7 @@ def tune_irqbalance(interface):
         print(error)
     #print(output)
     
-    command = './set_irq_affinity.sh {0}'.format(phy_int)
+    command = 'set_irq_affinity.sh {0}'.format(phy_int)
     print(command)
     output, error = run_command(command) 
     if error != '':
