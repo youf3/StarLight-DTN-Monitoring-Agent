@@ -1,0 +1,6 @@
+[submodule "node-exporter-textfile-collector-scripts"]
+	path = node-exporter-textfile-collector-scripts
+	url = git@github.com:youf3/node-exporter-textfile-collector-scripts.git
+[submodule "node_exporter"]
+	path = node_exporter
+	url = https://github.com/prometheus/node_exporter.git

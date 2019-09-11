@@ -1,0 +1,11 @@
+[Unit]
+Description=Nvme_exporter
+Wants=network-online.target
+After=network-online.target
+
+[Service]
+Type=simple
+ExecStart=/usr/bin/sh -c "/usr/local/bin/nvme_metrics.sh |sponge /etc/node_exporter/nvme_exporter.prom"
+
+[Install]
+WantedBy=multi-user.target

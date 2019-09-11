@@ -1,0 +1,10 @@
+[Unit]
+Description=Run NVMe_exporter every 15 sec
+
+[Timer]
+OnBootSec=1min
+OnUnitActiveSec=15s
+Unit=nvme_exporter.service
+
+[Install]
+WantedBy=multi-user.target
