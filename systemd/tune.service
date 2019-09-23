@@ -5,6 +5,6 @@ After=network-online.target
 
 [Service]
 EnvironmentFile=/etc/node_exporter/env
-ExecStart=/usr/bin/sh -c '/usr/bin/python3 /usr/local/bin/TuneDTN.py ${INTERFACES}'
+ExecStart=/bin/sh -c '/usr/bin/python3 /usr/local/bin/TuneDTN.py ${INTERFACES}'
 [Install]
 WantedBy=multi-user.target

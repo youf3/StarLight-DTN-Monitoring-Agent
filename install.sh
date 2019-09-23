@@ -97,6 +97,7 @@ install_nvme_exp () {
     sudo cp node-exporter-textfile-collector-scripts/nvme_metrics.sh /usr/local/bin
     sudo cp systemd/nvme_exporter.* $systemd_loc
     sudo systemctl daemon-reload
+    sudo cp set_irq_affinity.sh /usr/sbin/
     for file in nvme_exporter.service nvme_exporter.timer
     do
 	sudo systemctl start $file 
@@ -114,4 +115,3 @@ mkdir build > /dev/null 2>&1
 install_node_exp
 install_nvme_exp
 install_tunedtn
-
