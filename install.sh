@@ -31,7 +31,7 @@ test_cmd () {
 }
 
 check_requirements () {
-
+    sudo -H pip3 install requirement.txt
     cmd="echo test|sponge > /dev/null"
     test_cmd "sponge" "$cmd"
 
