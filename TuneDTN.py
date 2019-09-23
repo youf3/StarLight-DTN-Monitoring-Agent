@@ -86,7 +86,9 @@ def get_numa(phy_int):
     if error != '':
         print("Cannot find NUMA Node for {0}".format(phy_int))
         return None
-    return str(output).strip()
+    numa = int(str(output).strip())
+    if numa == -1: numa = 0
+    return numa
     
     
 def tune_sysctl():
@@ -128,7 +130,7 @@ def tune_mellanox(phy_int):
     print('Tunning Mellanox card')
     bus = ethtool.get_businfo(phy_int)
     numa = get_numa(phy_int)
-    print(numa)
+    # print(numa)
     command = 'setpci -s {0} 68.w'.format(bus)
     output, error = run_command(command)
     
@@ -142,7 +144,7 @@ def tune_mellanox(phy_int):
     if error != '':
         print(error)
         
-    command = 'sudo mlnx_tune -p HIGH_THROUGHPUT'
+    # command = 'sudo mlnx_tune -p HIGH_THROUGHPUT'
     # output, error = run_command(command, ignore_stderr= True)
     
     # if error != '':
@@ -171,20 +173,59 @@ def tune_irqbalance(interface):
     phy_int = get_phy_int(interface)
     numa = get_numa(phy_int)
     
-    command = 'systemctl stop irqbalance'
+    command = 'sudo systemctl stop irqbalance'
     output, error = run_command(command)
 
     if error != '':
         print(error)
     #print(output)
     
-    command = '/usr/local/bin/set_irq_affinity.sh {0}'.format(phy_int)
-    print(command)
+    command = 'set_irq_affinity.sh {0}'.format(phy_int)
+    #print(command)
     output, error = run_command(command) 
     if error != '':
         print(error)
-    print(output)
+    #print(output)
    
+def tune_irq_size(interface, local_cores):
+    print('Turning irqbalance off')
+    numa = get_numa(phy_int)
+    
+    command = 'sudo systemctl stop irqbalance'
+    output, error = run_command(command)
+
+    if error != '':
+        print(error)
+
+    print('Limiting IRQ size to {}'.format(len(local_cores)))
+    command = 'sudo ethtool -L {} combined {}'.format(interface, len(local_cores))
+    #print(command)
+    _, error = run_command(command)
+
+    if error != '' and 'combined unmodified, ignoring' not in error:
+        print(error)
+
+    command = 'set_irq_affinity_bynode.sh {} {}'.format(numa, interface)
+    #print(command)
+    output, error = run_command(command)
+
+    if error != '':
+        print(error)
+    #print(output)
+
+def get_local_cores(numa):
+    import libnuma
+    local_cores = []
+    cpumask = libnuma.NodeToCpus(numa)
+    for i in range(0, libnuma.NumConfiguredCpus()):
+        if cpumask.isbitset(i):
+            local_cores.append(i)
+    return local_cores
+
+def get_cpu_name():
+    from cpuinfo import get_cpu_info
+    return get_cpu_info()['brand']
+    
 
 import unittest
 
@@ -223,6 +264,12 @@ class TuningTest(unittest.TestCase):
         qm=output.split(' ')[1]
         self.assertEqual('fq', qm)
     
+    def test_iommu(self):
+        with open('/proc/cmdline') as f:
+            kernel_cmdline = f.readline()
+
+        self.assertIn('iommu=pt', kernel_cmdline)
+
     def test_mtu(self):        
         if self.phy_int != self.interface:
             self.assertGreaterEqual(get_mtu(self.interface), 9000)       
@@ -304,14 +351,21 @@ class TuningTest(unittest.TestCase):
 
 def main(interfaces):
     tuned_int = []
-        
+    cpu = get_cpu_name()
+
     for interface in interfaces:
         phy_int = get_phy_int(interface)
+        numa = get_numa(phy_int)
+        local_cores = get_local_cores(numa)
+
         if phy_int is None:
             print("Cannot find interface {0}. Ignoring {0}..".format(interface))
             continue
         if phy_int not in tuned_int:
-            tune_irqbalance(phy_int)
+            if "AMD EPYC 7" in cpu:
+                tune_irq_size(phy_int, local_cores)
+            else:
+                tune_irqbalance(phy_int)
             tuned_int.append(phy_int)
         #suite = unittest.TestLoader().loadTestsFromTestCase(TuningTest)
         test_loader = unittest.TestLoader()
@@ -340,6 +394,8 @@ def main(interfaces):
                 print('Please check the PCI slot for {}'.format(interface))
             elif testname == 'test_flow_control':
                 tune_flow_control(phy_int)
+            elif testname == 'test_iommu':
+                print('Please add iommu=pt to the kernel parameter')
         if is_mellanox:
             tune_mellanox(phy_int)
         print('Done')
