@@ -189,7 +189,7 @@ def tune_irqbalance(interface):
    
 def tune_irq_size(interface, local_cores):
     print('Turning irqbalance off')
-    numa = get_numa(phy_int)
+    numa = get_numa(interface)
     
     command = 'sudo systemctl stop irqbalance'
     output, error = run_command(command)
