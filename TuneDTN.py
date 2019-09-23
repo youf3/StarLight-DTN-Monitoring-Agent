@@ -401,11 +401,12 @@ def main(interfaces):
         print('Done')
 
 if __name__ == '__main__':
-    ip = pyroute2.IPRoute()
-    indices = ip.link_lookup(operstate='UP')
     interfaces = []
-    for index in indices:
-        interfaces.append(ip.link('get', index=index)[0].get_attr('IFLA_IFNAME'))
+    ded_ifs = ['lo', 'docker', 'veth', 'eno', 'em']
+    with pyroute2.NDB() as ndb:
+        for key in ndb.interfaces:
+            if not any(ifname in key['ifname'] for ifname in ded_ifs):
+                interfaces.append(key['ifname'])
 
     parser = argparse.ArgumentParser()
     parser.add_argument('interface', type=str, choices=interfaces, nargs='+', help='Interface to tune')
