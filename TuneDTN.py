@@ -178,7 +178,7 @@ def tune_irqbalance(interface):
         print(error)
     #print(output)
     
-    command = 'set_irq_affinity.sh {0}'.format(phy_int)
+    command = '/usr/local/bin/set_irq_affinity.sh {0}'.format(phy_int)
     print(command)
     output, error = run_command(command) 
     if error != '':
@@ -311,7 +311,7 @@ def main(interfaces):
             print("Cannot find interface {0}. Ignoring {0}..".format(interface))
             continue
         if phy_int not in tuned_int:
-            # tune_irqbalance(phy_int)
+            tune_irqbalance(phy_int)
             tuned_int.append(phy_int)
         #suite = unittest.TestLoader().loadTestsFromTestCase(TuningTest)
         test_loader = unittest.TestLoader()
