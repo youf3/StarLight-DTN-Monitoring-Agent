@@ -97,7 +97,7 @@ install_nvme_exp () {
     sudo cp node-exporter-textfile-collector-scripts/nvme_metrics.sh /usr/local/bin
     sudo cp systemd/nvme_exporter.* $systemd_loc
     sudo systemctl daemon-reload
-    sudo cp set_irq_affinity.sh common_irq_affinity.sh /usr/local/bin/
+    sudo cp set_irq_affinity.sh set_irq_affinity_bynode.sh common_irq_affinity.sh /usr/local/bin/
     for file in nvme_exporter.service nvme_exporter.timer
     do
 	sudo systemctl start $file 
