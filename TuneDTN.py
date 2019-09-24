@@ -265,10 +265,14 @@ class TuningTest(unittest.TestCase):
         self.assertEqual('fq', qm)
     
     def test_iommu(self):
-        with open('/proc/cmdline') as f:
-            kernel_cmdline = f.readline()
+        cpu = get_cpu_name()
+        if "AMD EPYC 7" in cpu:
+            with open('/proc/cmdline') as f:
+                kernel_cmdline = f.readline()
 
-        self.assertIn('iommu=pt', kernel_cmdline)
+            self.assertIn('iommu=pt', kernel_cmdline)
+        else:
+            self.skipTest("AMD EPYC not detected")            
 
     def test_mtu(self):        
         if self.phy_int != self.interface:
