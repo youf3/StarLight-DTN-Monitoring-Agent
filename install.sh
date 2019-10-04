@@ -31,6 +31,9 @@ test_cmd () {
 }
 
 check_requirements () {
+
+    sudo apt install python3-pip jq pkg-config libnuma-dev libnl-3-dev moreutils libnl-route-3-dev
+    
     test_cmd "pip" "sudo pip3 -V > /dev/null"
     
     sudo -H pip3 install -r requirements.txt
