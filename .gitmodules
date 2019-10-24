@@ -4,3 +4,6 @@
 [submodule "node_exporter"]
 	path = node_exporter
 	url = https://github.com/prometheus/node_exporter.git
+[submodule "prometheus-ethtool-exporter"]
+	path = prometheus-ethtool-exporter
+	url = https://github.com/Showmax/prometheus-ethtool-exporter.git

@@ -1,5 +1,7 @@
 #!/bin/bash
 
+#set -x
+
 systemd_loc=/etc/systemd/system/
 speed=100000
 
@@ -15,6 +17,7 @@ get_arch () {
     #echo $architecture
 }
 
+
 test_cmd () {
 
     name=$1
@@ -26,13 +29,33 @@ test_cmd () {
     if [ $RETVAL -ne 0 ]
     then
 	# echo "$name not found"
-	exit -1
+	return -1
     fi
+    return 0
 }
 
 check_requirements () {
 
-    sudo apt install python3-pip jq pkg-config libnuma-dev libnl-3-dev moreutils libnl-route-3-dev
+    if [ ! -d "node-exporter-textfile-collector-scripts" ]
+    then
+	echo "submodule is missing"
+	exit -1
+    fi
+
+    if [ ! -d "prometheus-ethtool-exporter" ]
+    then
+	echo "submodule is missing"
+	exit -1
+    fi
+
+
+    eval "apt -v" > /dev/null 2>&1
+    if [ $? -eq 0  ]
+    then
+	sudo apt install -y python3-pip jq pkg-config libnuma-dev libnl-3-dev moreutils libnl-route-3-dev
+    else
+	sudo yum install -y python36-pip jq pkgconfig numactl-libs libnl3-devel 
+    fi
     
     test_cmd "pip" "sudo pip3 -V > /dev/null"
     
@@ -110,6 +133,13 @@ install_nvme_exp () {
     done
 }
 
+install_ethtool_exp() {
+    sudo cp prometheus-ethtool-exporter/ethtool-exporter.py /usr/local/bin
+    sudo cp systemd/ethtool_exporter.service $systemd_loc
+    sudo systemctl daemon-reload
+    sudo systemctl start ethtool_exporter.service
+    sudo systemctl enable ethtool_exporter.service
+}
 
 get_arch
 check_requirements
@@ -119,4 +149,5 @@ mkdir build > /dev/null 2>&1
 
 install_node_exp
 install_nvme_exp
+install_ethtool_exp
 install_tunedtn

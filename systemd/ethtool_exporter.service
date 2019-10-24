@@ -1,0 +1,11 @@
+[Unit]
+Description=ethtool_exporter
+Wants=network-online.target
+After=network-online.target
+
+[Service]
+Type=simple
+ExecStart=/usr/bin/python3 /usr/local/bin/ethtool-exporter.py -f /etc/node_exporter/ethtool.prom
+
+[Install]
+WantedBy=multi-user.target

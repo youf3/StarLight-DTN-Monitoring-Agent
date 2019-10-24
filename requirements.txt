@@ -1,6 +1,7 @@
-ethtool==0.13
-py_cpuinfo==5.0.0
-pyroute2==0.5.6
-python3_libnuma==2.3.2
-Cython==0.29.13
-babel==2.7.0
+ethtool
+py_cpuinfo
+pyroute2
+python3_libnuma
+Cython
+babel
+prometheus_client
