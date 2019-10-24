@@ -93,6 +93,7 @@ install_node_exp () {
 
 list_interface () {
     interfaces=()
+    phy_interface="phy_int=["
     ind=0
     for interface in /sys/class/net/*
     do
@@ -101,6 +102,14 @@ list_interface () {
 	    #echo "${interface##*/}"	    
 	    interfaces[$ind]=${interface##*/}
 	    ind=$(( ind + 1 ))
+
+	    subvlans="$(ls -d ${interface}/upper_* 2>/dev/null)"
+	    if [ ${#subvlans} -gt 0 ]
+	    then
+		#echo "this is physical device"
+		phy_interface="${phy_interface}${interface##*/}|"
+	    fi
+
 	fi
     done
 
@@ -109,10 +118,14 @@ list_interface () {
 	echo "Cannot find interface with speed $speed"
 	exit -1
     fi
+
+    phy_interface="${phy_interface%?}]"
+
 }
 
 install_tunedtn () {
     sudo cp TuneDTN.py /usr/local/bin/
+    sudo cp set_irq_affinity.sh set_irq_affinity_bynode.sh common_irq_affinity.sh /usr/sbin/
     list_interface
     echo INTERFACES=${interfaces[@]}|sudo tee /etc/node_exporter/env
     sudo cp systemd/tune.service $systemd_loc
@@ -125,7 +138,6 @@ install_nvme_exp () {
     sudo cp node-exporter-textfile-collector-scripts/nvme_metrics.sh /usr/local/bin
     sudo cp systemd/nvme_exporter.* $systemd_loc
     sudo systemctl daemon-reload
-    sudo cp set_irq_affinity.sh set_irq_affinity_bynode.sh common_irq_affinity.sh /usr/sbin/
     for file in nvme_exporter.service nvme_exporter.timer
     do
 	sudo systemctl start $file 
