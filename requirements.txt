@@ -1,6 +1,6 @@
 ethtool
 py_cpuinfo
-pyroute2
+pyroute2==0.5.7
 python3_libnuma
 Cython
 babel
