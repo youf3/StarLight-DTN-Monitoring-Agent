@@ -58,7 +58,7 @@ check_requirements () {
     fi
     
     test_cmd "pip" "sudo pip3 -V > /dev/null"
-    
+    sudo -H pip3 install Cython babel
     sudo -H pip3 install -r requirements.txt
     cmd="echo test|sponge > /dev/null"
     test_cmd "sponge" "$cmd"
