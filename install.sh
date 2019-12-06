@@ -52,9 +52,9 @@ check_requirements () {
     eval "apt -v" > /dev/null 2>&1
     if [ $? -eq 0  ]
     then
-	sudo apt install -y python3-pip jq pkg-config libnuma-dev libnl-3-dev moreutils libnl-route-3-dev
+	sudo apt install -y python3-pip jq pkg-config libnuma-dev libnl-3-dev moreutils libnl-route-3-dev ethtool
     else
-	sudo yum install -y python36-pip jq pkgconfig numactl-libs libnl3-devel 
+	sudo yum install -y python36-pip jq pkgconfig numactl-libs libnl3-devel ethtool
     fi
     
     test_cmd "pip" "sudo pip3 -V > /dev/null"
