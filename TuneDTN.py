@@ -352,7 +352,6 @@ class AMDTest(unittest.TestCase):
         self.assertEqual(int(cur_queue), len(self.local_cores))
 
     def test_iommu(self):
-        cpu = get_cpu_name()        
         with open('/proc/cmdline') as f:
             kernel_cmdline = f.readline()
 
