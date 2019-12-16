@@ -357,6 +357,7 @@ class CxTest(unittest.TestCase):
             if 'dropless_rq' in line:
                 dropless_rq = line.split(':')[1].strip()
 
+        if dropless_rq == None : self.skipTest("dropless_rq is not supported. Please install recent Mellanox OFED driver.")
         self.assertEqual(dropless_rq, 'on')
 
 class AMDTest(unittest.TestCase):
