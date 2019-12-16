@@ -37,7 +37,7 @@ def run_command(cmd, ignore_stderr = False):
             errs = bytes(''.join(errs), 'UTF-8')
             
         elif proc.stderr.readline() == b'':
-            outs, errs = proc.communicate()            
+            outs, errs = proc.communicate()
         else:
             outs, errs = proc.communicate()
         
@@ -88,8 +88,7 @@ def get_numa(phy_int):
         return None
     numa = int(str(output).strip())
     if numa == -1: numa = 0
-    return numa
-    
+    return numa    
     
 def tune_sysctl():
     print('Changing TCP buffer to 2GB')
@@ -135,7 +134,7 @@ def tune_mellanox(phy_int):
     output, error = run_command(command)
     
     tempstr = list(output)
-    tempstr[0] = '5'    
+    tempstr[0] = '5'
     maxredreq = ''.join(tempstr)    
         
     command = 'setpci -s {0} 68.w={1}'.format(bus, maxredreq)
@@ -168,10 +167,8 @@ def tune_flow_control(phy_int):
         print(error)
     print(output)
 
-def tune_irqbalance(interface):
+def tune_irqbalance():
     print('Turning irqbalance off')
-    phy_int = get_phy_int(interface)
-    numa = get_numa(phy_int)
     
     command = 'sudo systemctl stop irqbalance'
     output, error = run_command(command)
@@ -180,6 +177,9 @@ def tune_irqbalance(interface):
         print(error)
     #print(output)
     
+def tune_irq_affinity(interface):
+    phy_int = get_phy_int(interface)
+    numa = get_numa(phy_int)
     command = 'set_irq_affinity.sh {0}'.format(phy_int)
     #print(command)
     output, error = run_command(command) 
@@ -188,15 +188,8 @@ def tune_irqbalance(interface):
     #print(output)
    
 def tune_irq_size(interface, local_cores):
-    print('Turning irqbalance off')
-    numa = get_numa(interface)
-    
-    command = 'sudo systemctl stop irqbalance'
-    output, error = run_command(command)
-
-    if error != '':
-        print(error)
-
+    phy_int = get_phy_int(interface)
+    numa = get_numa(phy_int)
     print('Limiting IRQ size to {}'.format(len(local_cores)))
     command = 'sudo ethtool -L {} combined {}'.format(interface, len(local_cores))
     #print(command)
@@ -229,7 +222,7 @@ def get_cpu_name():
 
 import unittest
 
-class TuningTest(unittest.TestCase):    
+class TuningTest(unittest.TestCase):
     
     def __init__(self, testname, interface):
         super(TuningTest, self).__init__(testname)
@@ -262,21 +255,11 @@ class TuningTest(unittest.TestCase):
         if error != '':
             print(error)
         qm=output.split(' ')[1]
-        self.assertEqual('fq', qm)
+        self.assertEqual('fq', qm)    
     
-    def test_iommu(self):
-        cpu = get_cpu_name()
-        if "AMD EPYC 7" in cpu:
-            with open('/proc/cmdline') as f:
-                kernel_cmdline = f.readline()
-
-            self.assertIn('iommu=pt', kernel_cmdline)
-        else:
-            self.skipTest("AMD EPYC not detected")            
-
     def test_mtu(self):        
         if self.phy_int != self.interface:
-            self.assertGreaterEqual(get_mtu(self.interface), 9000)       
+            self.assertGreaterEqual(get_mtu(self.interface), 9000)  
         self.assertGreaterEqual(get_mtu(self.phy_int), 9000)
         
     def test_cpu_governor(self):
@@ -303,7 +286,7 @@ class TuningTest(unittest.TestCase):
             self.assertEqual(speed, 'Speed 8GT/s')
             self.assertEqual(width, ' Width x16')
         else:
-            self.fail(error)       
+            self.fail(error)
     
     def test_flow_control(self):
         if self.phy_int == None : self.fail('No interface {}'.format(self.interface))
@@ -338,26 +321,48 @@ class CxTest(unittest.TestCase):
         self.driver = ethtool.get_module(self.phy_int)
         self.bus = ethtool.get_businfo(self.phy_int)
 
-    def test_maxreadreq(self):                       
-        
+    def test_maxreadreq(self):
         command = 'sudo setpci -s {0} 68.w'.format(self.bus)
         output, error = run_command(command)
         #print(output)
         self.assertEqual(output[0], '5')
             
     def test_ring_size(self):
-        
         command = 'lspci -s {0}'.format(self.bus)
-        output,error = run_command(command)        
+        output,error = run_command(command)
         if '[ConnectX-5' not in output and '[ConnectX-4' not in output : self.skipTest('This is not ConnectX-5')
             
         ring_param = ethtool.get_ringparam(self.phy_int)
         self.assertEqual(ring_param['rx_pending'], 8192)
         self.assertEqual(ring_param['tx_pending'], 8192)
 
-def main(interfaces):
+class AMDTest(unittest.TestCase):
+    def __init__(self, testname, interface):
+        super(AMDTest, self).__init__(testname)
+        self.interface = interface
+        self.phy_int = get_phy_int(self.interface) 
+        self.numa = get_numa(self.phy_int)
+        self.local_cores = get_local_cores(self.numa)
+
+    def test_irq_size(self):
+        command = 'ethtool -l {}'.format(self.phy_int)
+        output,error = run_command(command)
+
+        cur_queue = output.strip().split('\n')[-1].split(':')[1].strip()
+        self.assertEqual(int(cur_queue), len(self.local_cores))
+
+    def test_iommu(self):
+        cpu = get_cpu_name()        
+        with open('/proc/cmdline') as f:
+            kernel_cmdline = f.readline()
+
+        self.assertIn('iommu=pt', kernel_cmdline)        
+
+def main(interfaces):    
     tuned_int = []
     cpu = get_cpu_name()
+
+    tune_irqbalance()
 
     for interface in interfaces:
         phy_int = get_phy_int(interface)
@@ -367,23 +372,22 @@ def main(interfaces):
         if phy_int is None:
             print("Cannot find interface {0}. Ignoring {0}..".format(interface))
             continue
+        else:
+            print('Starting Test for {}'.format(interface))
         if phy_int not in tuned_int:
-            if "AMD EPYC 7" in cpu:
-                tune_irq_size(phy_int, local_cores)
-            else:
-                tune_irqbalance(phy_int)
+            tune_irq_affinity(phy_int)
             tuned_int.append(phy_int)
 
         #load generic tests
         test_loader = unittest.TestLoader()
         generic_test_names = test_loader.getTestCaseNames(TuningTest)
         generic_suite = unittest.TestSuite()
-        for test_name in generic_test_names:            
+        for test_name in generic_test_names:
             generic_suite.addTest(TuningTest(test_name, interface))
         
         print('\n----------------------Starting Generic test---------------------------')
         #generic test
-        test_result = unittest.TextTestRunner(verbosity=2).run(generic_suite)                
+        test_result = unittest.TextTestRunner(verbosity=2).run(generic_suite)
         for failure in test_result.failures:
             testname = failure[0].id().split(".")[-1]
             if testname == 'test_sysctl_value':
@@ -403,10 +407,10 @@ def main(interfaces):
 
         print('\n---------------Starting Mellanox specific test------------------------')
         #load mellanox connectx-4 and 5 specific test
-        if ethtool.get_module(phy_int) == 'mlx5_core':            
+        if ethtool.get_module(phy_int) == 'mlx5_core':
             test_names = test_loader.getTestCaseNames(CxTest)
             testsuite = unittest.TestSuite()
-            for test_name in test_names:            
+            for test_name in test_names:
                 testsuite.addTest(CxTest(test_name, interface))
         
             test_result = unittest.TextTestRunner(verbosity=2).run(testsuite)
@@ -417,7 +421,23 @@ def main(interfaces):
                     tune_mellanox(phy_int)
                 elif testname == 'test_ring_size':
                     tune_ring_size(phy_int)
-           
+        
+        print('\n------------------Starting AMD specific test--------------------------')        
+        if "AMD EPYC 7" in cpu:
+            test_names = test_loader.getTestCaseNames(AMDTest)
+            testsuite = unittest.TestSuite()
+            for test_name in test_names:
+                testsuite.addTest(AMDTest(test_name, interface))
+        
+            test_result = unittest.TextTestRunner(verbosity=2).run(testsuite)
+
+            for failure in test_result.failures:
+                testname = failure[0].id().split(".")[-1]
+                if testname == 'test_irq_size':
+                    tune_irq_size(phy_int,local_cores)
+                elif testname == 'test_iommu':
+                    print('Please add iommu=pt to the kernel parameter')
+
         print('Done')
 
 if __name__ == '__main__':
