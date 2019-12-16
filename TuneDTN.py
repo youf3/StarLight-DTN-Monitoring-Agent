@@ -151,7 +151,7 @@ def tune_mellanox(phy_int):
     #     print(error)
     #print(output)
     
-def tune_ring_buf(phy_int):
+def tune_ring_size(phy_int):
     print('Tunning ring param for ConnectX-4 and 5')
     ring = ethtool.get_ringparam(phy_int)
     ring['rx_pending'] = 8192
@@ -236,7 +236,7 @@ class TuningTest(unittest.TestCase):
         self.interface = interface
         self.phy_int = get_phy_int(self.interface) 
         if self.phy_int == None: raise Exception("There is no interface {0}".format(interface))
-        self.driver = ethtool.get_module(self.phy_int)
+        #self.driver = ethtool.get_module(self.phy_int)
         self.bus = ethtool.get_businfo(self.phy_int)
     
     def test_sysctl_value(self):
@@ -303,31 +303,8 @@ class TuningTest(unittest.TestCase):
             self.assertEqual(speed, 'Speed 8GT/s')
             self.assertEqual(width, ' Width x16')
         else:
-            self.fail(error)
-       
-    def test_meallnox_nic(self):
-        if self.phy_int == None : self.fail('No interface {}'.format(self.interface))
-               
-        if self.driver != 'mlx5_core':  self.skipTest('This is not Mellanox ConnectX-4 or X-5')            
-        
-        command = 'sudo setpci -s {0} 68.w'.format(self.bus)
-        output, error = run_command(command)
-        #print(output)
-        self.assertEqual(output[0], '5')
-            
-    def test_connectx_5(self):
-        if self.phy_int == None : self.fail('No interface {}'.format(self.interface))        
-             
-        if self.driver != 'mlx5_core': self.skipTest('This is not Mellanox ConnectX-4 or X-5')        
-        
-        command = 'lspci -s {0}'.format(self.bus)
-        output,error = run_command(command)        
-        if '[ConnectX-5' not in output and '[ConnectX-4' not in output : self.skipTest('This is not ConnectX-5')
-            
-        ring_param = ethtool.get_ringparam(self.phy_int)
-        self.assertEqual(ring_param['rx_pending'], 8192)
-        self.assertEqual(ring_param['tx_pending'], 8192)
-
+            self.fail(error)       
+    
     def test_flow_control(self):
         if self.phy_int == None : self.fail('No interface {}'.format(self.interface))
         
@@ -353,6 +330,31 @@ class TuningTest(unittest.TestCase):
                 rx = line.split(' ')[4]
                 self.assertEqual(rx,'inactive')
 
+class CxTest(unittest.TestCase):
+    def __init__(self, testname, interface):
+        super(CxTest, self).__init__(testname)
+        self.interface = interface
+        self.phy_int = get_phy_int(self.interface) 
+        self.driver = ethtool.get_module(self.phy_int)
+        self.bus = ethtool.get_businfo(self.phy_int)
+
+    def test_maxreadreq(self):                       
+        
+        command = 'sudo setpci -s {0} 68.w'.format(self.bus)
+        output, error = run_command(command)
+        #print(output)
+        self.assertEqual(output[0], '5')
+            
+    def test_ring_size(self):
+        
+        command = 'lspci -s {0}'.format(self.bus)
+        output,error = run_command(command)        
+        if '[ConnectX-5' not in output and '[ConnectX-4' not in output : self.skipTest('This is not ConnectX-5')
+            
+        ring_param = ethtool.get_ringparam(self.phy_int)
+        self.assertEqual(ring_param['rx_pending'], 8192)
+        self.assertEqual(ring_param['tx_pending'], 8192)
+
 def main(interfaces):
     tuned_int = []
     cpu = get_cpu_name()
@@ -371,15 +373,17 @@ def main(interfaces):
             else:
                 tune_irqbalance(phy_int)
             tuned_int.append(phy_int)
-        #suite = unittest.TestLoader().loadTestsFromTestCase(TuningTest)
+
+        #load generic tests
         test_loader = unittest.TestLoader()
-        test_names = test_loader.getTestCaseNames(TuningTest)
-        suite = unittest.TestSuite()
-        for test_name in test_names:            
-            suite.addTest(TuningTest(test_name, interface))
-        test_result = unittest.TextTestRunner(verbosity=2).run(suite)
-                
-        is_mellanox = False
+        generic_test_names = test_loader.getTestCaseNames(TuningTest)
+        generic_suite = unittest.TestSuite()
+        for test_name in generic_test_names:            
+            generic_suite.addTest(TuningTest(test_name, interface))
+        
+        print('\n----------------------Starting Generic test---------------------------')
+        #generic test
+        test_result = unittest.TextTestRunner(verbosity=2).run(generic_suite)                
         for failure in test_result.failures:
             testname = failure[0].id().split(".")[-1]
             if testname == 'test_sysctl_value':
@@ -390,18 +394,30 @@ def main(interfaces):
                 tune_mtu(interface)
             elif testname == 'test_cpu_governor':
                 tune_cpu_governer()
-            elif testname == 'test_meallnox_nic':
-                is_mellanox = True
-            elif testname == 'test_connectx_5':
-                tune_ring_buf(phy_int)
             elif testname == 'test_pci_speed':
                 print('Please check the PCI slot for {}'.format(interface))
             elif testname == 'test_flow_control':
                 tune_flow_control(phy_int)
             elif testname == 'test_iommu':
-                print('Please add iommu=pt to the kernel parameter')
-        if is_mellanox:
-            tune_mellanox(phy_int)
+                print('Please add iommu=pt to the kernel parameter')     
+
+        print('\n---------------Starting Mellanox specific test------------------------')
+        #load mellanox connectx-4 and 5 specific test
+        if ethtool.get_module(phy_int) == 'mlx5_core':            
+            test_names = test_loader.getTestCaseNames(CxTest)
+            testsuite = unittest.TestSuite()
+            for test_name in test_names:            
+                testsuite.addTest(CxTest(test_name, interface))
+        
+            test_result = unittest.TextTestRunner(verbosity=2).run(testsuite)
+
+            for failure in test_result.failures:
+                testname = failure[0].id().split(".")[-1]
+                if testname == 'test_maxreadreq':
+                    tune_mellanox(phy_int)
+                elif testname == 'test_ring_size':
+                    tune_ring_size(phy_int)
+           
         print('Done')
 
 if __name__ == '__main__':
