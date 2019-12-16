@@ -178,6 +178,7 @@ def tune_irqbalance():
     #print(output)
     
 def tune_irq_affinity(interface):
+    print('Tuning irq affinity')
     phy_int = get_phy_int(interface)
     numa = get_numa(phy_int)
     command = 'set_irq_affinity.sh {0}'.format(phy_int)
@@ -205,6 +206,16 @@ def tune_irq_size(interface, local_cores):
     if error != '':
         print(error)
     #print(output)
+
+def tune_dropless_rq(interface):
+    phy_int = get_phy_int(interface)
+    print('Turning dropless_rq on')
+
+    command = 'ethtool --set-priv-flags {} dropless_rq on'.format(phy_int)
+    output, error = run_command(command)
+
+    if error != '':
+        print(error)
 
 def get_local_cores(numa):
     import libnuma
@@ -336,6 +347,18 @@ class CxTest(unittest.TestCase):
         self.assertEqual(ring_param['rx_pending'], 8192)
         self.assertEqual(ring_param['tx_pending'], 8192)
 
+    def test_dropless_rq(self):
+        command = 'ethtool --show-priv-flags {}'.format(self.phy_int)
+        output,error = run_command(command)
+
+        dropless_rq = None
+
+        for line in output.splitlines():
+            if 'dropless_rq' in line:
+                dropless_rq = line.split(':')[1].strip()
+
+        self.assertEqual(dropless_rq, 'on')
+
 class AMDTest(unittest.TestCase):
     def __init__(self, testname, interface):
         super(AMDTest, self).__init__(testname)
@@ -420,6 +443,8 @@ def main(interfaces):
                     tune_mellanox(phy_int)
                 elif testname == 'test_ring_size':
                     tune_ring_size(phy_int)
+                elif testname == 'test_dropless_rq':
+                    tune_dropless_rq(interface)
         
         print('\n------------------Starting AMD specific test--------------------------')        
         if "AMD EPYC 7" in cpu:
