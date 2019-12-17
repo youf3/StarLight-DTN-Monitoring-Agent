@@ -52,9 +52,9 @@ check_requirements () {
     eval "apt -v" > /dev/null 2>&1
     if [ $? -eq 0  ]
     then
-	sudo apt install -y python3-pip jq pkg-config libnuma-dev libnl-3-dev moreutils libnl-route-3-dev ethtool
+	sudo apt install -y python3-pip jq pkg-config libnuma-dev libnl-3-dev moreutils libnl-route-3-dev ethtool lldpd
     else
-	sudo yum install -y python36-pip jq pkgconfig numactl-libs libnl3-devel ethtool
+	sudo yum install -y python36-pip jq pkgconfig numactl-libs libnl3-devel ethtool lldpd
     fi
     
     test_cmd "pip" "sudo pip3 -V > /dev/null"
@@ -153,6 +153,11 @@ install_ethtool_exp() {
     sudo systemctl enable ethtool_exporter.service
 }
 
+configure_lldpd() {
+    echo "configure lldp portidsubtype ifname" |sudo tee /etc/lldpd.d/set_port_id.conf
+    sudo systemctl restart lldpd
+}
+
 get_arch
 check_requirements
 git submodule update --init --recursive
@@ -163,3 +168,4 @@ install_node_exp
 install_nvme_exp
 install_ethtool_exp
 install_tunedtn
+configure_lldpd
