@@ -156,6 +156,7 @@ install_ethtool_exp() {
 configure_lldpd() {
     echo "configure lldp portidsubtype ifname" |sudo tee /etc/lldpd.d/set_port_id.conf
     sudo systemctl restart lldpd
+    sudo systemctl enable lldpd
 }
 
 get_arch
