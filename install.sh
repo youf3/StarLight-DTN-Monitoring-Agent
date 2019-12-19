@@ -28,8 +28,8 @@ test_cmd () {
     RETVAL=$?
     if [ $RETVAL -ne 0 ]
     then
-	# echo "$name not found"
-	return -1
+	echo "$name not found"
+	exit -1
     fi
     return 0
 }
