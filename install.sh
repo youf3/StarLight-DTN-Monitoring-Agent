@@ -52,9 +52,9 @@ check_requirements () {
     eval "apt -v" > /dev/null 2>&1
     if [ $? -eq 0  ]
     then
-	sudo apt install -y python3-pip jq pkg-config libnuma-dev libnl-3-dev moreutils libnl-route-3-dev ethtool lldpd
+	sudo apt install -y python3-pip jq pkg-config libnuma-dev libnl-3-dev moreutils libnl-route-3-dev ethtool # lldpd
     else
-	sudo yum install -y python36-pip jq pkgconfig numactl-libs libnl3-devel ethtool lldpd moreutils
+	sudo yum install -y python36-pip jq pkgconfig numactl-libs libnl3-devel ethtool moreutils # lldpd
     fi
     
     test_cmd "pip" "sudo pip3 -V > /dev/null"
@@ -159,6 +159,12 @@ configure_lldpd() {
     sudo systemctl enable lldpd
 }
 
+## lldp is great, but we lose some packet when lldpd is running.
+disable_lldp() {
+    sudo systemctl stop lldpd
+    sudo systemctl disable lldpd
+}
+
 get_arch
 check_requirements
 git submodule update --init --recursive
@@ -169,4 +175,5 @@ install_node_exp
 install_nvme_exp
 install_ethtool_exp
 install_tunedtn
-configure_lldpd
+# configure_lldpd
+disable_lldp
