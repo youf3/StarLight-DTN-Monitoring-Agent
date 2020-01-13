@@ -1,2 +1,0 @@
-# HELP node_net_ethtool Ethtool data
-# TYPE node_net_ethtool gauge
