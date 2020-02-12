@@ -112,6 +112,7 @@ install_node_exp () {
     then
 	echo "Adding 9100/tcp to firewall"
 	sudo cp node_exporter.xml /usr/lib/firewalld/services/
+	sudo firewall-cmd --reload
 	sudo firewall-cmd --permanent --zone public --add-service=node_exporter
 	sudo firewall-cmd --reload
     fi
