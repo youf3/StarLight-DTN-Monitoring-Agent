@@ -54,7 +54,8 @@ check_requirements () {
     then
 	sudo apt install -y python3-pip jq pkg-config libnuma-dev libnl-3-dev moreutils libnl-route-3-dev ethtool # lldpd
     else
-	sudo yum install -y python36-pip jq pkgconfig numactl-libs libnl3-devel ethtool moreutils # lldpd
+	sudo yum install -y epel-release
+	sudo yum install -y python36-pip jq pkgconfig numactl-libs libnl3-devel ethtool moreutils moreutils python3-devel numactl-devel # lldpd
     fi
     
     test_cmd "pip" "sudo pip3 -V > /dev/null"
@@ -176,4 +177,4 @@ install_nvme_exp
 install_ethtool_exp
 install_tunedtn
 # configure_lldpd
-disable_lldp
+# disable_lldp
