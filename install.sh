@@ -17,6 +17,17 @@ get_arch () {
     #echo $architecture
 }
 
+get_linux_dist() {
+
+    if [ -f /etc/os-release ]; then
+	# freedesktop.org and systemd
+	. /etc/os-release
+	OS=$NAME
+    else
+	# Fall back to uname, e.g. "Linux <version>", also works for BSD, etc.
+	OS=$(uname -s)
+    fi
+}
 
 test_cmd () {
 
@@ -48,14 +59,20 @@ check_requirements () {
 	exit -1
     fi
 
+    get_linux_dist
 
-    eval "apt -v" > /dev/null 2>&1
-    if [ $? -eq 0  ]
+    echo "$OS"
+
+    if [ "$OS" == "Ubuntu" ]
     then
 	sudo apt install -y python3-pip jq pkg-config libnuma-dev libnl-3-dev moreutils libnl-route-3-dev ethtool # lldpd
-    else
+    elif [ "$OS" == "CentOS Linux" ]
+    then
 	sudo yum install -y epel-release
 	sudo yum install -y python36-pip jq pkgconfig numactl-libs libnl3-devel ethtool moreutils moreutils python3-devel numactl-devel # lldpd
+    else
+	echo "Unsupported distribution"
+	exit -1
     fi
     
     test_cmd "pip" "sudo pip3 -V > /dev/null"
@@ -90,6 +107,15 @@ install_node_exp () {
     sudo systemctl daemon-reload
     sudo systemctl start node_exporter.service
     sudo systemctl enable node_exporter.service
+
+    if [ "$OS" == "CentOS Linux" ]
+    then
+	echo "Adding 9100/tcp to firewall"
+	sudo cp node_exporter.xml /usr/lib/firewalld/services/
+	sudo firewall-cmd --permanent --zone public --add-service=node_exporter
+	sudo firewall-cmd --reload
+    fi
+
 }
 
 list_interface () {
