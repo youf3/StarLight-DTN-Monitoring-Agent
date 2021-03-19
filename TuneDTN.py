@@ -228,8 +228,7 @@ def get_local_cores(numa):
 
 def get_cpu_name():
     from cpuinfo import get_cpu_info
-    return get_cpu_info()['brand']
-    
+    return get_cpu_info()['brand_raw']    
 
 import unittest
 
