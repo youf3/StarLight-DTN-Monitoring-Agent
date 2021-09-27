@@ -340,7 +340,7 @@ class CxTest(unittest.TestCase):
     def test_ring_size(self):
         command = 'lspci -s {0}'.format(self.bus)
         output,error = run_command(command)
-        if '[ConnectX-5' not in output and '[ConnectX-4' not in output : self.skipTest('This is not ConnectX-5')
+        if '[ConnectX' not in output: self.skipTest('This is not ConnectX-5')
             
         ring_param = ethtool.get_ringparam(self.phy_int)
         self.assertEqual(ring_param['rx_pending'], 8192)
