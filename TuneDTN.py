@@ -69,8 +69,10 @@ def get_phy_int(interface):
 def get_link_cap(pci_info):
     line = list(filter(lambda x:'LnkSta:' in x ,pci_info))[0]
     caps = list(filter(None, re.split('[:,\t]',line)))
+    ls = int(re.search('Speed (\d+)GT/s', caps[1]).group(1))
+    width = int(re.search('Width x(\d+)', caps[2]).group(1))
     
-    return caps[1], caps[2]
+    return ls, width
     
 def get_mtu(interface):
     ip = pyroute2.IPRoute()
@@ -293,8 +295,8 @@ class TuningTest(unittest.TestCase):
             status = output.split('\n')
             #print(status)
             speed, width = get_link_cap(status)
-            self.assertEqual(speed, 'Speed 8GT/s')
-            self.assertEqual(width, ' Width x16')
+            self.assertEqual(speed >= 8, True)
+            self.assertEqual(width >= 16, True)
         else:
             self.fail(error)
     
@@ -320,8 +322,8 @@ class TuningTest(unittest.TestCase):
         output,error = run_command(command)
         for line in output.split('\n'):
             if 'Active:' in line:
-                rx = line.split(' ')[4]
-                self.assertEqual(rx,'inactive')
+                #rx = line.split(' ')[4]
+                self.assertIn('inactive', line)
 
 class CxTest(unittest.TestCase):
     def __init__(self, testname, interface):
