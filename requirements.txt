@@ -1,5 +1,5 @@
 ethtool
-py_cpuinfo
+py-cpuinfo==8.0.0
 pyroute2==0.5.7
 python3_libnuma
 Cython
