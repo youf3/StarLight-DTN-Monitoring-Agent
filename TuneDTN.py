@@ -382,7 +382,7 @@ class AMDTest(unittest.TestCase):
 
         self.assertIn('iommu=pt', kernel_cmdline)        
 
-def main(interfaces):    
+def main(interfaces, checkOnly):    
     tuned_int = []
     cpu = get_cpu_name()
 
@@ -412,22 +412,23 @@ def main(interfaces):
         print('\n----------------------Starting Generic test---------------------------')
         #generic test
         test_result = unittest.TextTestRunner(verbosity=2).run(generic_suite)
-        for failure in test_result.failures:
-            testname = failure[0].id().split(".")[-1]
-            if testname == 'test_sysctl_value':
-                tune_sysctl()
-            elif testname == 'test_fq':
-                tune_fq(phy_int)
-            elif testname == 'test_mtu':
-                tune_mtu(interface)
-            elif testname == 'test_cpu_governor':
-                tune_cpu_governer()
-            elif testname == 'test_pci_speed':
-                print('Please check the PCI slot for {}'.format(interface))
-            elif testname == 'test_flow_control':
-                tune_flow_control(phy_int)
-            elif testname == 'test_iommu':
-                print('Please add iommu=pt to the kernel parameter')     
+        if not checkOnly:
+            for failure in test_result.failures:
+                testname = failure[0].id().split(".")[-1]
+                if testname == 'test_sysctl_value':
+                    tune_sysctl()
+                elif testname == 'test_fq':
+                    tune_fq(phy_int)
+                elif testname == 'test_mtu':
+                    tune_mtu(interface)
+                elif testname == 'test_cpu_governor':
+                    tune_cpu_governer()
+                elif testname == 'test_pci_speed':
+                    print('Please check the PCI slot for {}'.format(interface))
+                elif testname == 'test_flow_control':
+                    tune_flow_control(phy_int)
+                elif testname == 'test_iommu':
+                    print('Please add iommu=pt to the kernel parameter')     
 
         print('\n---------------Starting Mellanox specific test------------------------')
         #load mellanox connectx-4 and 5 specific test
@@ -438,15 +439,15 @@ def main(interfaces):
                 testsuite.addTest(CxTest(test_name, interface))
         
             test_result = unittest.TextTestRunner(verbosity=2).run(testsuite)
-
-            for failure in test_result.failures:
-                testname = failure[0].id().split(".")[-1]
-                if testname == 'test_maxreadreq':
-                    tune_mellanox(phy_int)
-                elif testname == 'test_ring_size':
-                    tune_ring_size(phy_int)
-                elif testname == 'test_dropless_rq':
-                    tune_dropless_rq(interface)
+            if not checkOnly:
+                for failure in test_result.failures:
+                    testname = failure[0].id().split(".")[-1]
+                    if testname == 'test_maxreadreq':
+                        tune_mellanox(phy_int)
+                    elif testname == 'test_ring_size':
+                        tune_ring_size(phy_int)
+                    elif testname == 'test_dropless_rq':
+                        tune_dropless_rq(interface)
         
         print('\n------------------Starting AMD specific test--------------------------')        
         if "AMD EPYC 7" in cpu:
@@ -457,12 +458,13 @@ def main(interfaces):
         
             test_result = unittest.TextTestRunner(verbosity=2).run(testsuite)
 
-            for failure in test_result.failures:
-                testname = failure[0].id().split(".")[-1]
-                if testname == 'test_irq_size':
-                    tune_irq_size(phy_int,local_cores)
-                elif testname == 'test_iommu':
-                    print('Please add iommu=pt to the kernel parameter')
+            if not checkOnly:
+                for failure in test_result.failures:
+                    testname = failure[0].id().split(".")[-1]
+                    if testname == 'test_irq_size':
+                        tune_irq_size(phy_int,local_cores)
+                    elif testname == 'test_iommu':
+                        print('Please add iommu=pt to the kernel parameter')
 
         print('Done')
 
@@ -475,6 +477,7 @@ if __name__ == '__main__':
                 interfaces.append(key['ifname'])
 
     parser = argparse.ArgumentParser()
-    parser.add_argument('interface', type=str, choices=interfaces, nargs='+', help='Interface to tune')
+    parser.add_argument( '-c', '--checkOnly', action="store_true",  help='Test the interface but do not tune')
+    parser.add_argument('interface', type=str, choices=interfaces, nargs='+', help='Interface to tune')    
     args = parser.parse_args()
-    main(args.interface)
+    main(args.interface, args.checkOnly)
