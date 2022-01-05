@@ -96,12 +96,11 @@ install_node_exp () {
 
     sudo useradd --no-create-home --shell /bin/false node_exporter
     sudo mkdir /etc/node_exporter > /dev/null 2>&1
-    
-    wget -O build/node_exporter.tar.gz https://github.com/prometheus/node_exporter/releases/download/v1.2.2/node_exporter-1.2.2.linux-${architecture}.tar.gz 
+    wget -O build/node_exporter.tar.gz https://github.com/prometheus/node_exporter/releases/download/v1.3.1/node_exporter-1.3.1.linux-${architecture}.tar.gz 
 
     cd build
     tar -xf node_exporter.tar.gz
-    sudo cp node_exporter-0.18.1.linux-amd64/node_exporter /usr/local/bin
+    sudo cp node_exporter-1.3.1.linux-amd64/node_exporter /usr/local/bin
     cd ..
     sudo cp systemd/node_exporter.service $systemd_loc
     sudo systemctl daemon-reload
