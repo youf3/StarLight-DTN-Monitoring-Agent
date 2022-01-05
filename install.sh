@@ -65,11 +65,11 @@ check_requirements () {
 
     if [ "$OS" == "Ubuntu" ]
     then
-	sudo apt install -y python3-pip jq pkg-config libnuma-dev libnl-3-dev moreutils libnl-route-3-dev ethtool # lldpd
+	sudo apt install -y python3-pip jq pkg-config libnuma-dev libnl-3-dev moreutils libnl-route-3-dev ethtool lldpd
     elif [ "$OS" == "CentOS Linux" ]
     then
 	sudo yum install -y epel-release
-	sudo yum install -y python36-pip jq pkgconfig numactl-libs libnl3-devel ethtool moreutils moreutils python3-devel numactl-devel # lldpd
+	sudo yum install -y python36-pip jq pkgconfig numactl-libs libnl3-devel ethtool moreutils moreutils python3-devel numactl-devel lldpd
     else
 	echo "Unsupported distribution"
 	exit -1
@@ -202,5 +202,5 @@ install_node_exp
 install_nvme_exp
 install_ethtool_exp
 install_tunedtn
-# configure_lldpd
-# disable_lldp
+configure_lldpd
+disable_lldp
