@@ -458,13 +458,13 @@ def main(interfaces, checkOnly):
         
             test_result = unittest.TextTestRunner(verbosity=2).run(testsuite)
 
-            if not checkOnly:
-                for failure in test_result.failures:
-                    testname = failure[0].id().split(".")[-1]
-                    if testname == 'test_irq_size':
-                        tune_irq_size(phy_int,local_cores)
-                    elif testname == 'test_iommu':
-                        print('Please add iommu=pt to the kernel parameter')
+            for failure in test_result.failures:
+                testname = failure[0].id().split(".")[-1]
+                if testname == 'test_irq_size':
+                    # tune_irq_size(phy_int,local_cores)
+                    tune_irq_size(phy_int,32)
+                elif testname == 'test_iommu':
+                    print('Please add iommu=pt to the kernel parameter')
 
         print('Done')
 
