@@ -65,9 +65,16 @@ check_requirements () {
 
     if [ "$OS" == "Ubuntu" ]
     then
-	sudo apt install -y python3-pip jq pkg-config libnuma-dev libnl-3-dev moreutils libnl-route-3-dev ethtool lldpd
+	source /etc/os-release
+        wget -qO - https://www.mellanox.com/downloads/ofed/RPM-GPG-KEY-Mellanox | sudo apt-key add -
+	sudo wget -O /etc/apt/sources.list.d/mellanox_mlnx_ofd.list  https://linux.mellanox.com/public/repo/mlnx_ofed/latest/${ID}${VERSION_ID}/mellanox_mlnx_ofed.list
+	sudo apt update
+	sudo apt install -y python3-pip jq pkg-config libnuma-dev libnl-3-dev moreutils libnl-route-3-dev ethtool lldpd	mlnx-ofed-all
+
     elif [ "$OS" == "CentOS Linux" ]
     then
+        wget https://www.mellanox.com/downloads/ofed/RPM-GPG-KEY-Mellanox
+        sudo rpm --import RPM-GPG-KEY-Mellanox 
 	sudo yum install -y epel-release
 	sudo yum install -y python36-pip jq pkgconfig numactl-libs libnl3-devel ethtool moreutils moreutils python3-devel numactl-devel lldpd
     else
