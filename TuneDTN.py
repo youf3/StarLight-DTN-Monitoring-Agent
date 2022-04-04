@@ -190,12 +190,12 @@ def tune_irq_affinity(interface):
         print(error)
     #print(output)
    
-def tune_irq_size(interface, local_cores):
+def tune_irq_size(interface, channels):
     phy_int = get_phy_int(interface)
     numa = get_numa(phy_int)
-    print('Limiting IRQ size to {}'.format(len(local_cores)))
-    command = 'sudo ethtool -L {} combined {}'.format(interface, len(local_cores))
-    #print(command)
+    print('Limiting IRQ size to {}'.format(channels))
+    command = 'sudo ethtool -L {} combined {}'.format(interface, channels)
+    print(command)
     _, error = run_command(command)
 
     if error != '' and 'combined unmodified, ignoring' not in error:
@@ -230,7 +230,12 @@ def get_local_cores(numa):
 
 def get_cpu_name():
     from cpuinfo import get_cpu_info
-    return get_cpu_info()['brand_raw']    
+    return get_cpu_info()['brand_raw']
+
+def get_max_channels(interface):
+    command = 'ethtool -l {}'.format(interface)
+    output,error = run_command(command)
+    return int(output.strip().split('\n')[5].split(':')[1].strip())
 
 import unittest
 
@@ -368,13 +373,14 @@ class AMDTest(unittest.TestCase):
         self.phy_int = get_phy_int(self.interface) 
         self.numa = get_numa(self.phy_int)
         self.local_cores = get_local_cores(self.numa)
+        self.max_channels = get_max_channels(self.phy_int)
 
     def test_irq_size(self):
         command = 'ethtool -l {}'.format(self.phy_int)
         output,error = run_command(command)
 
         cur_queue = output.strip().split('\n')[-1].split(':')[1].strip()
-        self.assertEqual(int(cur_queue), len(self.local_cores))
+        self.assertEqual(int(cur_queue), self.max_channels)
 
     def test_iommu(self):
         with open('/proc/cmdline') as f:
@@ -391,7 +397,8 @@ def main(interfaces, checkOnly):
     for interface in interfaces:
         phy_int = get_phy_int(interface)
         numa = get_numa(phy_int)
-        local_cores = get_local_cores(numa)
+        # local_cores = get_local_cores(numa)
+        max_channels = get_max_channels(phy_int)
 
         if phy_int is None:
             print("Cannot find interface {0}. Ignoring {0}..".format(interface))
@@ -462,7 +469,7 @@ def main(interfaces, checkOnly):
                 testname = failure[0].id().split(".")[-1]
                 if testname == 'test_irq_size':
                     # tune_irq_size(phy_int,local_cores)
-                    tune_irq_size(phy_int,32)
+                    tune_irq_size(phy_int, max_channels)
                 elif testname == 'test_iommu':
                     print('Please add iommu=pt to the kernel parameter')
 
