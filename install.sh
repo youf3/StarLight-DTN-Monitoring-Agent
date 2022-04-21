@@ -69,15 +69,17 @@ check_requirements () {
         wget -qO - https://www.mellanox.com/downloads/ofed/RPM-GPG-KEY-Mellanox | sudo apt-key add -
 	# sudo wget -O /etc/apt/sources.list.d/mellanox_mlnx_ofd.list  https://linux.mellanox.com/public/repo/mlnx_ofed/latest/${ID}${VERSION_ID}/mellanox_mlnx_ofed.list
 	echo  "deb http://linux.mellanox.com/public/repo/mlnx_ofed/latest/${ID}${VERSION_ID}/\$(ARCH) ./"| sudo tee /etc/apt/sources.list.d/mellanox_mlnx_ofed.list
+	curl -L "https://packages.gitlab.com/install/repositories/runner/gitlab-runner/script.deb.sh" | sudo bash
 	sudo apt update
-	sudo apt install -y python3-pip jq pkg-config libnuma-dev libnl-3-dev moreutils libnl-route-3-dev ethtool lldpd	mlnx-ofed-all
+	sudo apt install -y python3-pip jq pkg-config libnuma-dev libnl-3-dev moreutils libnl-route-3-dev ethtool lldpd	mlnx-ofed-all gitlab-runner
 
     elif [ "$OS" == "CentOS Linux" ]
     then
         wget https://www.mellanox.com/downloads/ofed/RPM-GPG-KEY-Mellanox
-        sudo rpm --import RPM-GPG-KEY-Mellanox 
+        sudo rpm --import RPM-GPG-KEY-Mellanox
+	curl -L "https://packages.gitlab.com/install/repositories/runner/gitlab-runner/script.rpm.sh" | sudo bash
 	sudo yum install -y epel-release
-	sudo yum install -y python36-pip jq pkgconfig numactl-libs libnl3-devel ethtool moreutils moreutils python3-devel numactl-devel lldpd
+	sudo yum install -y python36-pip jq pkgconfig numactl-libs libnl3-devel ethtool moreutils moreutils python3-devel numactl-devel lldpd gitlab-runner
     else
 	echo "Unsupported distribution"
 	exit -1
