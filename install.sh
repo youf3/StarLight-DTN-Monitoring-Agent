@@ -70,16 +70,23 @@ check_requirements () {
 	# sudo wget -O /etc/apt/sources.list.d/mellanox_mlnx_ofd.list  https://linux.mellanox.com/public/repo/mlnx_ofed/latest/${ID}${VERSION_ID}/mellanox_mlnx_ofed.list
 	echo  "deb http://linux.mellanox.com/public/repo/mlnx_ofed/latest/${ID}${VERSION_ID}/\$(ARCH) ./"| sudo tee /etc/apt/sources.list.d/mellanox_mlnx_ofed.list
 	curl -L "https://packages.gitlab.com/install/repositories/runner/gitlab-runner/script.deb.sh" | sudo bash
+	curl -fsSL https://download.docker.com/linux/ubuntu/gpg | sudo apt-key add -
+	sudo add-apt-repository \
+	        "deb [arch=amd64] https://download.docker.com/linux/ubuntu \
+   $(lsb_release -cs) \
+   stable"
 	sudo apt update
-	sudo apt install -y python3-pip jq pkg-config libnuma-dev libnl-3-dev moreutils libnl-route-3-dev ethtool lldpd	mlnx-ofed-all gitlab-runner
+	sudo apt install -y python3-pip jq pkg-config libnuma-dev libnl-3-dev moreutils libnl-route-3-dev ethtool lldpd	mlnx-ofed-all gitlab-runner docker-ce
+	sudo adduser gitlab-runner docker
 
     elif [ "$OS" == "CentOS Linux" ]
     then
         wget https://www.mellanox.com/downloads/ofed/RPM-GPG-KEY-Mellanox
         sudo rpm --import RPM-GPG-KEY-Mellanox
 	curl -L "https://packages.gitlab.com/install/repositories/runner/gitlab-runner/script.rpm.sh" | sudo bash
-	sudo yum install -y epel-release
-	sudo yum install -y python36-pip jq pkgconfig numactl-libs libnl3-devel ethtool moreutils moreutils python3-devel numactl-devel lldpd gitlab-runner
+	sudo yum install -y epel-release yum-utils device-mapper-persistent-data lvm2
+	sudo yum-config-manager --add-repo https://download.docker.com/linux/centos/docker-ce.repo
+	sudo yum install -y python36-pip jq pkgconfig numactl-libs libnl3-devel ethtool moreutils moreutils python3-devel numactl-devel lldpd gitlab-runner docker-ce
     else
 	echo "Unsupported distribution"
 	exit -1
