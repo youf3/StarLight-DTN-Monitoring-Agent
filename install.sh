@@ -66,11 +66,11 @@ check_requirements () {
     if [ "$OS" == "Ubuntu" ]
     then
 	source /etc/os-release
-        wget -qO - https://www.mellanox.com/downloads/ofed/RPM-GPG-KEY-Mellanox | sudo apt-key add -
+        wget -qO - https://www.mellanox.com/downloads/ofed/RPM-GPG-KEY-Mellanox | sudo tee /etc/apt/trusted.gpg.d/RPM-GPG-KEY-Mellanox.asc
 	# sudo wget -O /etc/apt/sources.list.d/mellanox_mlnx_ofd.list  https://linux.mellanox.com/public/repo/mlnx_ofed/latest/${ID}${VERSION_ID}/mellanox_mlnx_ofed.list
 	echo  "deb http://linux.mellanox.com/public/repo/mlnx_ofed/latest/${ID}${VERSION_ID}/\$(ARCH) ./"| sudo tee /etc/apt/sources.list.d/mellanox_mlnx_ofed.list
 	curl -L "https://packages.gitlab.com/install/repositories/runner/gitlab-runner/script.deb.sh" | sudo bash
-	curl -fsSL https://download.docker.com/linux/ubuntu/gpg | sudo apt-key add -
+	curl -fsSL https://download.docker.com/linux/ubuntu/gpg | sudo tee /etc/apt/trusted.gpg.d/docker.asc
 	sudo add-apt-repository \
 	        "deb [arch=amd64] https://download.docker.com/linux/ubuntu \
    $(lsb_release -cs) \
