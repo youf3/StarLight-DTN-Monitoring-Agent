@@ -14,7 +14,8 @@ tcp_params = {
         'net.core.netdev_max_backlog' : 250000,
         'net.ipv4.tcp_no_metrics_save' : 1,
         'net.ipv4.tcp_mtu_probing' : 1,
-        'net.core.default_qdisc' : 'fq'
+        'net.core.default_qdisc' : 'fq',
+        'net.ipv4.tcp_congestion_control': 'bbr'
         }
 
 def run_command(cmd, ignore_stderr = False):
