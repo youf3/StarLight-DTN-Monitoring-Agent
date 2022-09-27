@@ -3,7 +3,7 @@
 #set -x
 
 systemd_loc=/etc/systemd/system/
-speed=100000
+speed=200000
 
 get_arch () {
     architecture=""
@@ -76,7 +76,7 @@ check_requirements () {
    $(lsb_release -cs) \
    stable"
 	sudo apt update
-	sudo apt install -y python3-pip jq pkg-config libnuma-dev libnl-3-dev moreutils libnl-route-3-dev ethtool lldpd	mlnx-ofed-all gitlab-runner docker-ce
+	sudo apt install -y python3-pip jq pkg-config libnuma-dev libnl-3-dev moreutils libnl-route-3-dev ethtool lldpd	mlnx-ofed-all mlnx-fw-updater gitlab-runner docker-ce
 	sudo adduser gitlab-runner docker
 
     elif [ "$OS" == "CentOS Linux" ]
