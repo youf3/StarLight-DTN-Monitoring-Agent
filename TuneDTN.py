@@ -1,7 +1,5 @@
-import time
 import getpass
 import subprocess
-import platform
 import re
 import pyroute2, ethtool
 import argparse
@@ -68,12 +66,16 @@ def get_phy_int(interface):
         return interface
 
 def get_link_cap(pci_info):
-    line = list(filter(lambda x:'LnkSta:' in x ,pci_info))[0]
-    caps = list(filter(None, re.split('[:,\t]',line)))
-    ls = int(re.search('Speed (\d+)GT/s', caps[1]).group(1))
-    width = int(re.search('Width x(\d+)', caps[2]).group(1))
+    lnksta_line = list(filter(lambda x:'LnkSta:' in x ,pci_info))[0]
+    lnkcap_line = list(filter(lambda x:'LnkCap:' in x ,pci_info))[0]
+    lnksta = list(filter(None, re.split('[:,\t]',lnksta_line)))
+    lnkcap = list(filter(None, re.split('[:,\t]',lnkcap_line)))
+    lnksta_speed = int(re.search('Speed (\d+)GT/s', lnksta[1]).group(1))
+    lnksta_width = int(re.search('Width x(\d+)', lnksta[2]).group(1))
+    lnkcap_speed = int(re.search('Speed (\d+)GT/s', lnkcap[2]).group(1))
+    lnkcap_width = int(re.search('Width x(\d+)', lnkcap[3]).group(1))
     
-    return ls, width
+    return lnksta_speed, lnksta_width, lnkcap_speed, lnkcap_width
     
 def get_mtu(interface):
     ip = pyroute2.IPRoute()
@@ -295,14 +297,14 @@ class TuningTest(unittest.TestCase):
             
     def test_pci_speed(self):
         command = 'sudo lspci -vvv -s {}'.format(self.bus)
-        output, error = run_command(command)
+        output, error = run_command(command)        
         
         if error == '':
             status = output.split('\n')
             #print(status)
-            speed, width = get_link_cap(status)
-            self.assertEqual(speed >= 8, True)
-            self.assertEqual(width >= 16, True)
+            lnksta_speed, lnksta_width, lnkcap_speed, lnkcap_width = get_link_cap(status)
+            self.assertEqual(lnksta_speed, lnkcap_speed)
+            self.assertEqual(lnksta_width, lnkcap_width)
         else:
             self.fail(error)
     
